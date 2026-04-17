@@ -1,97 +1,58 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Popovers: Beautiful iOS popovers for SwiftUI & UIKit"
+description: "Present any view as a popover in iOS apps with full customization, smooth animations, and zero dependencies. Works with SwiftUI and UIKit."
 ---
 
-## Setting up
+Popovers is a Swift library that makes it effortless to present custom popovers, menus, alerts, and overlays in iOS apps. With a single `.popover` modifier in SwiftUI or a simple `present()` call in UIKit, you can display any view above your app's content — fully customizable in position, animation, and dismissal behavior.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Add Popovers via Swift Package Manager or CocoaPods in minutes
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Present your first popover with a single line of code
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="SwiftUI Guide" icon="swift" href="/presenting/swiftui">
+    Use the `.popover` modifier to present views in SwiftUI
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="UIKit Guide" icon="mobile" href="/presenting/uikit">
+    Create and present Popover instances in UIKit
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Why Popovers?
 
-Everything you need to create world-class documentation.
+Popovers takes a modern approach to overlays in iOS — built on a SwiftUI core with full UIKit support, zero dependencies, and an expressive API that handles everything from simple tooltips to complex multi-popover flows.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={2}>
+  <Card title="Highly customizable" icon="sliders">
+    Control position, animation, dismissal mode, rubber banding, accessibility, and more through the `Attributes` struct
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="Flexible positioning" icon="arrows-up-down-left-right">
+    Attach popovers to source views (absolute) or use picture-in-picture style floating placement (relative)
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
+  <Card title="Multiple popovers" icon="layer-group">
+    Display multiple popovers simultaneously with smooth animated transitions between them
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
+  <Card title="Ready-made templates" icon="shapes">
+    Ship faster with the built-in `Menu`, `Container`, `BackgroundWithArrow`, and more
   </Card>
-</Columns>
+</CardGroup>
 
-## Need inspiration?
+## Get started
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Steps>
+  <Step title="Install the library">
+    Add Popovers to your Xcode project using Swift Package Manager with the URL `https://github.com/aheze/Popovers`, or add `pod 'Popovers'` to your Podfile.
+  </Step>
+  <Step title="Import and present">
+    Import `Popovers` and attach the `.popover(present:)` modifier to any SwiftUI view — or create a `Popover` instance and call `present()` in UIKit.
+  </Step>
+  <Step title="Customize">
+    Use the `attributes` closure to configure position, animation, dismissal behavior, accessibility, and more to match your app's design.
+  </Step>
+</Steps>
+
+<Note>
+  Popovers requires iOS 14+ and has zero external dependencies. It's built on a SwiftUI core for a lightweight footprint.
+</Note>

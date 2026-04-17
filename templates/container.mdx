@@ -1,0 +1,173 @@
+---
+title: "Templates.Container: styled popover shell with arrow"
+description: "Pre-built popover shell with a rounded rectangle, directional arrow, drop shadow, and configurable padding. Auto-detects arrow direction from position."
+---
+
+`Templates.Container` is a ready-made shell you drop around any content to give it the look of a native iOS popover: a rounded rectangle with a frosted or solid background, an optional drop shadow, configurable padding, and a triangular arrow that points toward the source view. When you do not specify an arrow side, `Container` reads the popover's computed position from `PopoverReader` and picks the correct side automatically.
+
+## Usage
+
+```swift
+.popover(present: $present) {
+    Templates.Container(arrowSide: .top(.centered)) {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Title")
+                .font(.headline)
+            Text("Here is some detail text inside the container.")
+                .font(.body)
+                .foregroundColor(.secondary)
+        }
+    }
+}
+```
+
+### Auto-detected arrow direction
+
+Omit `arrowSide` and the container infers the correct side from the popover's actual position at runtime:
+
+```swift
+.popover(
+    present: $present,
+    attributes: {
+        $0.position = .absolute(originAnchor: .bottom, popoverAnchor: .top)
+    }
+) {
+    Templates.Container {   // arrowSide is nil — resolved automatically
+        Text("I point upward because the popover is below the source view.")
+            .padding()
+    }
+}
+```
+
+### Custom appearance
+
+```swift
+Templates.Container(
+    arrowSide: .bottom(.mostClockwise),
+    cornerRadius: 20,
+    backgroundColor: Color(.secondarySystemBackground),
+    shadow: Templates.Shadow(color: .black.opacity(0.3), radius: 24, x: 0, y: 8),
+    padding: 24
+) {
+    Label("Settings saved", systemImage: "checkmark.circle.fill")
+        .foregroundColor(.green)
+}
+```
+
+## Parameters
+
+<ParamField path="arrowSide" type="ArrowSide?" default="nil">
+  Which side of the container the arrow protrudes from, and where along that side it is positioned. When `nil`, the side is derived from the popover's computed position via `PopoverReader`. See `ArrowSide` for the available values.
+</ParamField>
+
+<ParamField path="cornerRadius" type="CGFloat" default="12">
+  The corner radius of the rounded rectangle background.
+</ParamField>
+
+<ParamField path="backgroundColor" type="Color" default="Color(.systemBackground)">
+  The fill color of the container's background shape (including the arrow). Use a semi-transparent value or a material to create a frosted appearance.
+</ParamField>
+
+<ParamField path="shadow" type="Shadow?" default=".system">
+  The drop shadow rendered behind the container. Pass `nil` to remove the shadow entirely. See `Templates.Shadow` for available presets and custom values.
+</ParamField>
+
+<ParamField path="padding" type="CGFloat" default="16">
+  Uniform padding applied between the container's edges and the wrapped content view.
+</ParamField>
+
+<ParamField path="view" type="Content">
+  `@ViewBuilder` closure that produces the content rendered inside the container.
+</ParamField>
+
+---
+
+## ArrowSide
+
+`Templates.ArrowSide` is an enum that describes which edge of the container the arrow points from, and how far along that edge the arrow is placed.
+
+```
+                      top
+        X──────────────X──────────────X
+        |                             |
+        |                             |
+  left  X                             X  right
+        |                             |
+        |                             |
+        X──────────────X──────────────X
+                     bottom
+```
+
+Each case takes an `ArrowAlignment` argument:
+
+| Case | Arrow placement |
+|------|----------------|
+| `.top(ArrowAlignment)` | Arrow protrudes from the top edge |
+| `.right(ArrowAlignment)` | Arrow protrudes from the right edge |
+| `.bottom(ArrowAlignment)` | Arrow protrudes from the bottom edge |
+| `.left(ArrowAlignment)` | Arrow protrudes from the left edge |
+
+```swift
+Templates.Container(arrowSide: .top(.centered)) { ... }
+Templates.Container(arrowSide: .right(.mostCounterClockwise)) { ... }
+Templates.Container(arrowSide: .bottom(.mostClockwise)) { ... }
+Templates.Container(arrowSide: .left(.centered)) { ... }
+```
+
+### ArrowAlignment
+
+`Templates.ArrowSide.ArrowAlignment` controls where along the chosen edge the arrow sits.
+
+```
+mostCounterClockwise    centered          mostClockwise
+────X──────────────────────X──────────────────────X────
+|                                                     |
+            * diagram is for ArrowSide.top
+```
+
+| Case | Position |
+|------|----------|
+| `.mostCounterClockwise` | Near the leading end of the edge (top-left on `.top`, top-right on `.right`) |
+| `.centered` | Centred on the edge |
+| `.mostClockwise` | Near the trailing end of the edge |
+
+<Note>
+  When the arrow would overflow the container's corner radius at the extremes, the library automatically offsets it inward so it never clips through the rounded corner.
+</Note>
+
+---
+
+## Full example
+
+The example below presents a tooltip-style popover below a button with a centred upward-pointing arrow.
+
+```swift
+struct ContentView: View {
+    @State var showTip = false
+
+    var body: some View {
+        Button("Show tip") {
+            showTip.toggle()
+        }
+        .popover(
+            present: $showTip,
+            attributes: {
+                $0.position = .absolute(
+                    originAnchor: .bottom,
+                    popoverAnchor: .top
+                )
+            }
+        ) {
+            Templates.Container(
+                arrowSide: .top(.centered),
+                cornerRadius: 10,
+                backgroundColor: Color(.systemBackground),
+                padding: 12
+            ) {
+                Text("This is a helpful tip.")
+                    .font(.footnote)
+            }
+        }
+    }
+}
+```

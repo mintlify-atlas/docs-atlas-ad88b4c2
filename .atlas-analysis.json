@@ -1,0 +1,113 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Popovers",
+  "projectDescription": "A Swift library for presenting highly customizable popovers, alerts, menus, and overlays in iOS apps using SwiftUI and UIKit.",
+  "theme": "willow",
+  "primaryColor": "#f4565d",
+  "lightColor": "#faa4ac",
+  "darkColor": "#040404",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Presenting Popovers",
+            "pages": [
+              "presenting/swiftui",
+              "presenting/uikit",
+              "presenting/multiple-popovers"
+            ]
+          },
+          {
+            "group": "Customization",
+            "pages": [
+              "customization/position",
+              "customization/presentation-dismissal",
+              "customization/behavior",
+              "customization/accessibility"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "utilities/frame-tags",
+              "utilities/popover-reader",
+              "utilities/background",
+              "utilities/window-support"
+            ]
+          },
+          {
+            "group": "Templates",
+            "pages": [
+              "templates/menu",
+              "templates/container",
+              "templates/shapes-styles"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Present any SwiftUI view as a popover with a single modifier",
+    "Supports both SwiftUI (.popover modifier) and UIKit (Popover instance)",
+    "Absolute positioning (attached to source view) and relative/picture-in-picture positioning",
+    "Smooth animated transitions between multiple popovers",
+    "Highly customizable Attributes struct (position, animation, dismissal, accessibility)",
+    "Drop-in system Menu replacement that works on iOS 13+",
+    "Frame tagging system for referencing view frames across the hierarchy",
+    "Full VoiceOver accessibility support",
+    "Multiple screen and multitasking window support on iPadOS",
+    "Zero external dependencies"
+  ],
+  "publicApiSurface": [
+    "Popover (struct)",
+    "Popover.Attributes (struct)",
+    "Popover.Attributes.Position (.absolute / .relative)",
+    "Popover.Attributes.Position.Anchor (enum)",
+    "Popover.Attributes.Presentation (struct)",
+    "Popover.Attributes.Dismissal (struct)",
+    "Popover.Attributes.Dismissal.Mode (.tapOutside / .dragDown / .dragUp / .none)",
+    "Popover.Attributes.RubberBandingMode (OptionSet)",
+    "Popover.Attributes.Accessibility (struct)",
+    "Popover.Context (class)",
+    "View.popover(present:attributes:view:)",
+    "View.popover(present:attributes:view:background:)",
+    "View.popover(selection:tag:attributes:view:)",
+    "View.popover(selection:tag:attributes:view:background:)",
+    "View.frameTag(_:)",
+    "UIResponder.present(_:)",
+    "UIResponder.popover(tagged:)",
+    "UIResponder.replace(_:with:)",
+    "UIResponder.frameTagged(_:)",
+    "UIResponder.clearSavedFrames()",
+    "UIView.windowFrame()",
+    "PopoverReader (struct)",
+    "WindowReader (struct)",
+    "Templates (enum namespace)",
+    "Templates.Menu (SwiftUI component)",
+    "Templates.UIKitMenu (UIKit component)",
+    "Templates.MenuConfiguration (struct)",
+    "Templates.MenuItem (view)",
+    "Templates.MenuButton (view)",
+    "Templates.MenuDivider (view)",
+    "Templates.MenuGestureHotspot (view)",
+    "Templates.Container (view)",
+    "Templates.AlertButtonStyle (ButtonStyle)",
+    "Templates.VisualEffectView (UIViewRepresentable)",
+    "Templates.BackgroundWithArrow (Shape)",
+    "Templates.CurveConnector (Shape)",
+    "Templates.Shadow (struct)",
+    "Popovers.minimumDragDistance (CGFloat)",
+    "Popovers.frameUpdateDelayAfterBoundsChange (CGFloat)"
+  ]
+}

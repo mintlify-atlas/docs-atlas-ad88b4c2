@@ -1,0 +1,255 @@
+---
+title: "Templates: BackgroundWithArrow, Shadow, and visual effects"
+description: "Utility templates: BackgroundWithArrow shape, Shadow struct, VisualEffectView blur wrapper, AlertButtonStyle button, and the animatable CurveConnector."
+---
+
+The `Templates` namespace ships several building blocks you can use independently of `Templates.Menu` or `Templates.Container`. This page covers the low-level shape, style, and visual-effect primitives: `BackgroundWithArrow`, `Shadow`, `VisualEffectView`, `AlertButtonStyle`, and `CurveConnector`.
+
+---
+
+## Templates.BackgroundWithArrow
+
+`BackgroundWithArrow` is a SwiftUI `Shape` — a rounded rectangle with a triangular arrow protruding from one of its four sides. `Templates.Container` uses it internally, but you can apply it directly as a `.background` modifier on any view.
+
+```swift
+Text("Callout")
+    .padding(16)
+    .background(
+        Templates.BackgroundWithArrow(
+            arrowSide: .bottom(.centered),
+            cornerRadius: 12
+        )
+        .fill(Color(.systemBackground))
+        .shadow(radius: 8)
+    )
+```
+
+### Parameters
+
+<ParamField path="arrowSide" type="Templates.ArrowSide">
+  Which edge of the rectangle the arrow protrudes from, and its alignment along that edge. See `Templates.ArrowSide` on the [Container](/templates/container) page for the full list of cases and `ArrowAlignment` values.
+</ParamField>
+
+<ParamField path="cornerRadius" type="CGFloat">
+  The corner radius of the rounded rectangle. The arrow is automatically offset from the corner so it never clips through the curve.
+</ParamField>
+
+### Static geometry properties
+
+The arrow's dimensions are controlled by static properties on `BackgroundWithArrow`. You can override them globally if you need a different arrow shape:
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `BackgroundWithArrow.width` | `48` | Total width of the arrow base |
+| `BackgroundWithArrow.height` | `12` | Height of the arrow (how far it protrudes) |
+| `BackgroundWithArrow.tipCornerRadius` | `4` | Corner radius at the arrow tip |
+| `BackgroundWithArrow.edgeCornerRadius` | `10` | Inverse corner radius at the arrow base |
+
+---
+
+## Templates.Shadow
+
+`Templates.Shadow` is a lightweight value type that bundles the four parameters of a SwiftUI `.shadow()` modifier. It is accepted wherever Popovers applies a drop shadow — `Templates.Container`, `Templates.MenuConfiguration`, and the `.popoverShadow()` view modifier.
+
+### The system preset
+
+```swift
+let shadow = Templates.Shadow.system
+// color:  Color.black.opacity(0.25)
+// radius: 40
+// x:      0
+// y:      4
+```
+
+### Custom shadow
+
+```swift
+let shadow = Templates.Shadow(
+    color: Color.black.opacity(0.4),
+    radius: 24,
+    x: 0,
+    y: 8
+)
+```
+
+### Parameters
+
+<ParamField path="color" type="Color" default="Color.black.opacity(0.25)">
+  The shadow color.
+</ParamField>
+
+<ParamField path="radius" type="CGFloat" default="0">
+  The blur radius of the shadow. Larger values produce a softer, more diffuse shadow.
+</ParamField>
+
+<ParamField path="x" type="CGFloat" default="0">
+  Horizontal offset of the shadow in points. Positive values shift the shadow to the right.
+</ParamField>
+
+<ParamField path="y" type="CGFloat" default="0">
+  Vertical offset of the shadow in points. Positive values shift the shadow downward.
+</ParamField>
+
+### Usage with Container
+
+```swift
+Templates.Container(
+    arrowSide: .top(.centered),
+    shadow: Templates.Shadow(color: .indigo.opacity(0.3), radius: 20, x: 0, y: 6)
+) {
+    Text("Custom shadow")
+}
+```
+
+Pass `shadow: nil` to suppress the shadow entirely:
+
+```swift
+Templates.Container(shadow: nil) {
+    Text("No shadow")
+}
+```
+
+---
+
+## Templates.VisualEffectView
+
+`Templates.VisualEffectView` is a `UIViewRepresentable` wrapper around `UIVisualEffectView` that lets you use UIKit blur effects in SwiftUI. `Templates.Menu` uses it for its frosted-glass background.
+
+```swift
+Templates.VisualEffectView(.systemMaterial)
+    .cornerRadius(16)
+    .frame(width: 260, height: 160)
+```
+
+### Parameter
+
+<ParamField path="style" type="UIBlurEffect.Style">
+  Any `UIBlurEffect.Style` value. Common choices include `.prominent`, `.regular`, `.systemMaterial`, `.systemThinMaterial`, and `.systemUltraThinMaterial`.
+</ParamField>
+
+### Frosted-glass popover background
+
+```swift
+.popover(present: $present) {
+    Text("Frosted content")
+        .padding()
+} background: {
+    Templates.VisualEffectView(.systemUltraThinMaterial)
+        .cornerRadius(14)
+}
+```
+
+<Tip>
+  The `background:` closure on the `.popover()` modifier renders below the main content and ignores safe-area insets, making it ideal for full-bleed blur effects.
+</Tip>
+
+---
+
+## Templates.AlertButtonStyle
+
+`AlertButtonStyle` is a SwiftUI `ButtonStyle` that mimics the appearance of buttons inside a system alert. It stretches the label to fill the available width and applies a highlight background on press.
+
+```swift
+Button("Confirm") {
+    print("Confirmed")
+}
+.buttonStyle(Templates.AlertButtonStyle())
+```
+
+### Usage inside a popover
+
+```swift
+.popover(present: $showAlert) {
+    Templates.Container(arrowSide: .top(.centered)) {
+        VStack(spacing: 0) {
+            Text("Are you sure?")
+                .font(.headline)
+                .padding()
+
+            Divider()
+
+            Button("Delete") {
+                performDelete()
+                showAlert = false
+            }
+            .foregroundColor(.red)
+            .buttonStyle(Templates.AlertButtonStyle())
+
+            Divider()
+
+            Button("Cancel") {
+                showAlert = false
+            }
+            .buttonStyle(Templates.AlertButtonStyle())
+        }
+    }
+}
+```
+
+`AlertButtonStyle` takes no parameters. The highlight color is the library-wide `Templates.buttonHighlightColor`, which defaults to `Color.secondary.opacity(0.2)` and can be overridden globally:
+
+```swift
+Templates.buttonHighlightColor = Color.accentColor.opacity(0.15)
+```
+
+---
+
+## Templates.CurveConnector
+
+`CurveConnector` is an animatable SwiftUI `Shape` that draws a smooth cubic Bézier curve between two `CGPoint` values. Because it conforms to `Animatable`, you can drive both endpoints with `withAnimation` and SwiftUI will interpolate the curve smoothly.
+
+### Parameters
+
+<ParamField path="start" type="CGPoint">
+  The curve's start point in the coordinate space of the view that contains the shape.
+</ParamField>
+
+<ParamField path="end" type="CGPoint">
+  The curve's end point.
+</ParamField>
+
+<ParamField path="steepness" type="CGFloat" default="0.3">
+  How sharply the curve bows between the two endpoints. Higher values produce a more pronounced S-curve. The control points are offset by `steepness × (end − start)` along the primary axis.
+</ParamField>
+
+<ParamField path="direction" type="CurveConnector.Direction" default=".vertical">
+  Whether the control points are offset vertically (`.vertical`) or horizontally (`.horizontal`). Use `.vertical` when the curve flows top-to-bottom and `.horizontal` when it flows left-to-right.
+</ParamField>
+
+### Basic usage
+
+```swift
+Templates.CurveConnector(
+    start: CGPoint(x: 50, y: 0),
+    end: CGPoint(x: 200, y: 300)
+)
+.stroke(Color.accentColor, lineWidth: 2)
+.frame(width: 250, height: 300)
+```
+
+### Animated connector in a popover background
+
+```swift
+struct ConnectorBackground: View {
+    var context: Popover.Context
+
+    var body: some View {
+        GeometryReader { proxy in
+            let midTop = CGPoint(x: proxy.size.width / 2, y: 0)
+            let midBottom = CGPoint(x: proxy.size.width / 2, y: proxy.size.height)
+
+            Templates.CurveConnector(
+                start: midTop,
+                end: midBottom,
+                steepness: 0.4,
+                direction: .vertical
+            )
+            .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+        }
+    }
+}
+```
+
+<Note>
+  `CurveConnector` draws only the stroke path. Apply `.stroke()` or `.fill()` before using it as a background or overlay. Because it is a `Shape`, it automatically fills its enclosing frame.
+</Note>

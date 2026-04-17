@@ -1,0 +1,123 @@
+---
+title: "Popover behavior: tags, callbacks, and rubber banding"
+description: "Control popover behavior with tags, lifecycle callbacks, rubber banding, and background touch blocking via the Popover.Attributes struct."
+---
+
+Beyond positioning and animation, `Popover.Attributes` exposes several properties that govern how a popover interacts with the rest of your app — from programmatic lookup via tags, to gesture feel via rubber banding, to lifecycle callbacks fired on user interaction.
+
+## Tag
+
+<ParamField path="attributes.tag" type="AnyHashable?">
+  An optional identifier for the popover. Tags let you retrieve a presented popover from anywhere in your app — from a `UIView`, `UIViewController`, or a SwiftUI `WindowReader`. When you use the `.popover(selection:tag:attributes:view:)` SwiftUI modifier, the tag is set automatically to the value you supply in that modifier.
+</ParamField>
+
+## Gesture behavior
+
+<ParamField path="attributes.rubberBandingMode" type="RubberBandingMode" default="[.xAxis, .yAxis]">
+  An `OptionSet` that controls which axes exhibit rubber-banding when the popover is dragged. Rubber banding gives a springy, elastic feel as the popover is pulled past its bounds. See [RubberBandingMode](#rubberbandingmode) for all cases.
+</ParamField>
+
+<ParamField path="attributes.blocksBackgroundTouches" type="Bool" default="false">
+  When `true`, taps on views beneath the popover are ignored while the popover is presented. Use this when the popover content requires exclusive interaction and you want to prevent accidental taps on underlying UI.
+</ParamField>
+
+### RubberBandingMode
+
+`RubberBandingMode` is an `OptionSet`, so cases can be combined.
+
+| Case | Description |
+|------|-------------|
+| `.xAxis` | Enable rubber banding on the horizontal axis |
+| `.yAxis` | Enable rubber banding on the vertical axis |
+| `.none` | Disable rubber banding entirely |
+
+## Callbacks
+
+<ParamField path="attributes.onTapOutside" type="(() -> Void)?">
+  A closure called every time the user taps outside the popover. This is called regardless of the dismissal mode — it fires even if the popover is not configured to auto-dismiss on tap outside. Use it to react to outside taps without necessarily dismissing.
+</ParamField>
+
+<ParamField path="attributes.onDismiss" type="(() -> Void)?">
+  A closure called once when the popover is dismissed, regardless of what triggered the dismissal (gesture, programmatic, or accessibility escape).
+</ParamField>
+
+<ParamField path="attributes.onContextChange" type="((Context) -> Void)?">
+  A closure called whenever the popover's context changes. The `Context` value contains the popover's current frame, window, attributes, and other visible traits. This is useful for keeping external state synchronized with the popover's layout.
+</ParamField>
+
+## Code examples
+
+### Setting a tag and accessing the popover later
+
+```swift
+// Set the tag.
+$0.tag = "Your Tag"
+
+// Access it later from a UIView or UIViewController.
+let popover = popover(tagged: "Your Tag")
+
+// From a SwiftUI view, use WindowReader.
+WindowReader { window in
+    let popover = window.popover(tagged: "Your Tag")
+}
+```
+
+### Using callbacks
+
+<Tabs>
+  <Tab title="SwiftUI">
+    ```swift
+    .popover(
+        present: $present,
+        attributes: {
+            $0.onTapOutside = {
+                print("User tapped outside the popover.")
+            }
+            $0.onDismiss = {
+                print("Popover was dismissed.")
+            }
+            $0.onContextChange = { context in
+                print("Popover frame changed to: \(context.frame)")
+            }
+        }
+    ) {
+        Text("Hi, I'm a popover.")
+    }
+    ```
+  </Tab>
+  <Tab title="UIKit">
+    ```swift
+    var popover = Popover {
+        Text("Hi, I'm a popover.")
+    }
+
+    popover.attributes.onTapOutside = {
+        print("User tapped outside the popover.")
+    }
+    popover.attributes.onDismiss = {
+        print("Popover was dismissed.")
+    }
+    popover.attributes.onContextChange = { context in
+        print("Popover frame changed to: \(context.frame)")
+    }
+
+    present(popover)
+    ```
+  </Tab>
+</Tabs>
+
+### Disabling rubber banding
+
+```swift
+$0.rubberBandingMode = .none
+```
+
+### Blocking background touches
+
+```swift
+$0.blocksBackgroundTouches = true
+```
+
+<Tip>
+  Control the stacking order of multiple popovers by applying `.zIndex(_:)` to the popover's view. A higher z-index brings the popover in front of others presented at the same time.
+</Tip>

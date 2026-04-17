@@ -1,0 +1,77 @@
+---
+title: "PopoverReader: read live frame and context inside a popover"
+description: "Use PopoverReader to read a popover's live frame, hosting window, window bounds, and attributes from inside the popover's view or background."
+---
+
+`PopoverReader` works like `GeometryReader`, but instead of reading the geometry of the surrounding layout, it reads the `Popover.Context`—the live model that tracks the popover's current frame, its hosting `UIWindow`, and its full `Attributes`. Place it inside the popover's `view` or `background` closure to react to the popover's position as it moves on screen.
+
+## `PopoverReader`
+
+A SwiftUI view that reads `Popover.Context` from the environment and passes it to a builder closure. The context is injected by the popover container, so `PopoverReader` only works when placed inside a popover's `view` or `background`.
+
+```swift
+PopoverReader { context in
+    // Use context here.
+}
+```
+
+## `Popover.Context` properties
+
+<ParamField path="id" type="UUID">
+  A unique identifier for this popover instance. Useful for distinguishing popovers when multiple are on screen.
+</ParamField>
+
+<ParamField path="attributes" type="Popover.Attributes">
+  The full attributes struct for this popover, including its position, dismissal configuration, and callbacks.
+</ParamField>
+
+<ParamField path="frame" type="CGRect">
+  The popover's current frame in window coordinates, updated in real time as the popover is dragged or repositioned. Use `context.frame.point(at:)` to get specific anchor points on the frame.
+</ParamField>
+
+<ParamField path="window" type="UIWindow">
+  The `UIWindow` hosting this popover. If the popover has not been presented yet, accessing this property logs a warning and returns an empty `UIWindow`. Useful for calling window-level APIs such as `frameTagged(_:)` from inside the popover.
+</ParamField>
+
+<ParamField path="windowBounds" type="CGRect">
+  The bounds of the hosting window. Returns `CGRect.zero` if the popover has not been presented yet. Equivalent to `context.window.bounds` for a presented popover.
+</ParamField>
+
+## Example: draw a line from the popover to the bottom of the screen
+
+`PopoverReader` placed in the `background:` closure is the standard way to draw connecting lines between a popover and a point on screen. The line updates automatically as the popover moves.
+
+```swift
+.popover(present: $present) {
+    PopoverView()
+} background: {
+    PopoverReader { context in
+        Path {
+            $0.move(to: context.frame.point(at: .bottom))
+            $0.addLine(to: context.windowBounds.point(at: .bottom))
+        }
+        .stroke(Color.blue, lineWidth: 4)
+    }
+}
+```
+
+## `WindowReader` vs `PopoverReader`
+
+`WindowReader` reads the hosting `UIWindow` for SwiftUI views that are **outside** a popover. Inside a popover's `view` or `background`, use `PopoverReader` and access `context.window` instead.
+
+```swift
+// Outside a popover — use WindowReader.
+WindowReader { window in
+    Text("Click me!")
+        .popover(present: $present) { PopoverView() }
+}
+
+// Inside a popover's view or background — use PopoverReader.
+PopoverReader { context in
+    let window = context.window
+}
+```
+
+<Warning>
+  `PopoverReader` must be placed **inside** the popover's `view` or `background` closure. It reads its context from the SwiftUI environment injected by the popover container. Using it outside a popover will cause a runtime crash because the required environment object is not present.
+</Warning>

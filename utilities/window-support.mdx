@@ -1,0 +1,67 @@
+---
+title: "Multi-window support: per-window PopoverModel on iPadOS"
+description: "Popovers scopes each PopoverModel to a UIWindow, giving every iPadOS multitasking scene its own independent popover stack with no extra configuration."
+---
+
+Popovers has built-in support for multiple `UIWindow` instances and iPadOS multitasking. Rather than using a single global state, each `UIWindow` owns its own `PopoverModel`. When your app runs in Split View or Slide Over, each scene's window manages its popovers independently, so presenting a popover in one window never affects another.
+
+## How window scoping works
+
+The `UIResponder.popoverModel` computed property walks up the responder chain until it reaches a `UIWindow`, then retrieves (or creates) the `PopoverModel` associated with that window via `WindowPopoverModels.shared`. This means every view, view controller, and window in your app resolves to the correct model automatically.
+
+```swift
+// Internally, UIResponder.popoverModel walks the responder chain:
+// UIView → superview → ... → UIWindow → WindowPopoverModels.shared
+```
+
+The `WindowPopoverModels` singleton uses weak references to each `UIWindow`, so models for dismissed scenes are released automatically when iOS tears down the scene.
+
+## `WindowReader`
+
+`WindowReader` is a SwiftUI view that reads the `UIWindow` hosting the surrounding SwiftUI content. Use it when you need a reference to the window outside of a popover—for example, to call `frameTagged(_:)` or `popover(tagged:)`.
+
+```swift
+WindowReader { window in
+    // window is the UIWindow? hosting this SwiftUI view.
+    Text("Click me!")
+        .popover(
+            present: $present,
+            attributes: {
+                $0.sourceFrame = { window.frameTagged("Your Tag Name") }
+            }
+        ) {
+            Text("Hi, I'm a popover.")
+                .padding()
+        }
+}
+```
+
+## Accessing the window inside a popover
+
+Inside a popover's `view` or `background`, the window is available through `PopoverReader`'s context. Do not use `WindowReader` inside a popover.
+
+```swift
+// Inside a popover's view or background — use PopoverReader.
+PopoverReader { context in
+    let window = context.window
+    // Use window for frameTagged, popover(tagged:), etc.
+}
+```
+
+<Note>
+  Use `WindowReader` when your code is **outside** a popover (in your regular view hierarchy). Use `PopoverReader` and `context.window` when your code is **inside** a popover's `view` or `background` closure. Mixing them up will either produce a runtime crash (`PopoverReader` outside a popover) or return the wrong window (`WindowReader` inside a popover container view).
+</Note>
+
+## Global configuration
+
+Two global properties on the `Popovers` enum tune timing behavior across all windows:
+
+```swift
+/// Minimum drag distance before a popover starts moving. Default: 2 pt.
+Popovers.minimumDragDistance = CGFloat(2)
+
+/// Delay after a bounds change (e.g. rotation) before recalculating frames. Default: 0.6 s.
+Popovers.frameUpdateDelayAfterBoundsChange = CGFloat(0.6)
+```
+
+Adjust `frameUpdateDelayAfterBoundsChange` if popovers snap to incorrect positions after device rotation or a multitasking resize—a larger value gives the layout more time to settle before frames are recalculated.

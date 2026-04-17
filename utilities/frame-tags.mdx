@@ -1,0 +1,90 @@
+---
+title: "Frame tags: store and retrieve SwiftUI view frames"
+description: "Use frameTag to store any SwiftUI view's frame globally per-window and retrieve it later for precise popover source frame positioning."
+---
+
+Frame tags give you a way to capture a SwiftUI view's frame at layout time and look it up by name later, from anywhere in the same window. This is useful when the view you want to anchor a popover to is not the same view calling `.popover()`—for example, a header label whose frame you want to use as a `sourceFrame` from a different part of the view hierarchy.
+
+## `.frameTag(_:)`
+
+Apply `.frameTag(_:)` to any SwiftUI view to start tracking its frame. The frame is stored in the hosting `UIWindow`'s `PopoverModel` and updated whenever the layout changes or the view moves to a new window.
+
+<ParamField path="tag" type="AnyHashable" required>
+  A unique identifier for this frame. Use a `String`, `Int`, or any `Hashable` value. Must be unique within the same window to avoid collisions.
+</ParamField>
+
+```swift
+Text("This is a view")
+    .frameTag("Your Tag Name") // Adds a tag inside the window.
+```
+
+## `UIResponder.frameTagged(_:)`
+
+Retrieves the stored `CGRect` for a previously tagged view. Call this on any `UIResponder` in the window's responder chain—typically the `UIWindow` itself, accessed via `WindowReader`.
+
+<ParamField path="tag" type="AnyHashable" required>
+  The same tag you passed to `.frameTag(_:)`.
+</ParamField>
+
+Returns `CGRect.zero` if no view with that tag has been registered yet.
+
+```swift
+WindowReader { window in
+    Text("Click me!")
+        .popover(
+            present: $present,
+            attributes: {
+                $0.sourceFrame = { window.frameTagged("Your Tag Name") } // Retrieves a tag from the window.
+            }
+        )
+}
+```
+
+## `UIResponder.clearSavedFrames()`
+
+Removes all saved selection frames stored in the window's `PopoverModel`. Call this when navigating to a new screen where the previously tagged views no longer exist and their frames are no longer meaningful.
+
+```swift
+// Call when navigating away from the screen that owns the tagged views.
+window.clearSavedFrames()
+```
+
+## Complete example
+
+The pattern for frame tags always follows the same two steps: tag the view, then read the tag inside a `WindowReader`.
+
+```swift
+import SwiftUI
+import Popovers
+
+struct ContentView: View {
+    @State var present = false
+
+    var body: some View {
+        VStack {
+            Text("This is a view")
+                .frameTag("Your Tag Name") // Step 1: tag the view.
+
+            WindowReader { window in
+                Button("Show popover") {
+                    present = true
+                }
+                .popover(
+                    present: $present,
+                    attributes: {
+                        // Step 2: use the tag as the source frame.
+                        $0.sourceFrame = { window.frameTagged("Your Tag Name") }
+                    }
+                ) {
+                    Text("Hi, I'm a popover.")
+                        .padding()
+                }
+            }
+        }
+    }
+}
+```
+
+<Warning>
+  Frame tags are stored globally within each `UIWindow`. If two views in the same window share the same tag name, the later update will overwrite the earlier one. Always use unique, descriptive tag names to avoid frame collisions.
+</Warning>

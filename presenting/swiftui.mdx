@@ -1,0 +1,150 @@
+---
+title: "SwiftUI popover modifier: all four variants explained"
+description: "Use .popover(present:) or .popover(selection:tag:) to present popovers in SwiftUI. Covers bool-based, selection-based, and background variants."
+---
+
+The `.popover` modifier is the primary way to present popovers in SwiftUI. Attach it to any view, and the popover will use that view's frame as its source by default — no manual frame calculation required. Pass a binding to control presentation state, and optionally configure attributes like position, animation, and dismissal behavior.
+
+## Basic modifier
+
+Use `.popover(present:attributes:view:)` to present a popover controlled by a `Bool` binding.
+
+```swift
+import SwiftUI
+import Popovers
+
+struct ContentView: View {
+    @State var present = false
+
+    var body: some View {
+        Button("Present popover!") {
+            present = true
+        }
+        .popover(present: $present) {
+            Text("Hi, I'm a popover.")
+                .padding()
+                .foregroundColor(.white)
+                .background(.blue)
+                .cornerRadius(16)
+        }
+    }
+}
+```
+
+<ParamField path="present" type="Binding<Bool>" required>
+  Controls the popover's presentation state. Set to `true` to present, `false` to dismiss.
+</ParamField>
+
+<ParamField path="attributes" type="(inout Popover.Attributes) -> Void">
+  A closure to configure the popover's attributes before it is presented. Use `$0` to access and modify the attributes struct. Defaults to no-op.
+</ParamField>
+
+<ParamField path="view" type="() -> Content" required>
+  A `@ViewBuilder` closure that returns the popover's content view.
+</ParamField>
+
+## With a background
+
+Use `.popover(present:attributes:view:background:)` to render a custom view behind the popover, filling the entire screen beneath it.
+
+```swift
+.popover(present: $present) {
+    PopoverView()
+} background: {
+    Color.green.opacity(0.5)
+}
+```
+
+<ParamField path="present" type="Binding<Bool>" required>
+  Controls the popover's presentation state. Set to `true` to present, `false` to dismiss.
+</ParamField>
+
+<ParamField path="attributes" type="(inout Popover.Attributes) -> Void">
+  A closure to configure the popover's attributes before it is presented.
+</ParamField>
+
+<ParamField path="view" type="() -> MainContent" required>
+  A `@ViewBuilder` closure that returns the popover's content view.
+</ParamField>
+
+<ParamField path="background" type="() -> BackgroundContent" required>
+  A `@ViewBuilder` closure that returns the view rendered behind the popover. This fills the screen beneath the popover's content.
+</ParamField>
+
+## Multiple popovers (selection-based)
+
+Use `.popover(selection:tag:attributes:view:)` to coordinate multiple popovers from a single `@State` variable. The popover presents when `selection` equals its `tag`, and dismisses when `selection` changes to a different value or `nil`.
+
+```swift
+struct ContentView: View {
+    @State var selection: String?
+
+    var body: some View {
+        HStack {
+            Button("Present First Popover") { selection = "1" }
+                .popover(selection: $selection, tag: "1") {
+                    Text("Hi, I'm a popover.")
+                        .background(.blue)
+                }
+
+            Button("Present Second Popover") { selection = "2" }
+                .popover(selection: $selection, tag: "2") {
+                    Text("Hi, I'm a popover.")
+                        .background(.green)
+                }
+        }
+    }
+}
+```
+
+<ParamField path="selection" type="Binding<Selection?>" required>
+  A binding to the currently selected tag. The popover presents when this equals its `tag` and dismisses otherwise.
+</ParamField>
+
+<ParamField path="tag" type="Selection" required>
+  A `Hashable` value that uniquely identifies this popover. When `selection` equals `tag`, the popover is presented. This value is also automatically set as `attributes.tag`.
+</ParamField>
+
+<ParamField path="attributes" type="(inout Popover.Attributes) -> Void">
+  A closure to configure the popover's attributes before it is presented.
+</ParamField>
+
+<ParamField path="view" type="() -> Content" required>
+  A `@ViewBuilder` closure that returns the popover's content view.
+</ParamField>
+
+## Multiple popovers with a background
+
+Use `.popover(selection:tag:attributes:view:background:)` to combine the selection-based pattern with a custom background view.
+
+```swift
+.popover(selection: $selection, tag: "1") {
+    PopoverView()
+} background: {
+    Color.blue.opacity(0.3)
+}
+```
+
+<ParamField path="selection" type="Binding<Selection?>" required>
+  A binding to the currently selected tag. The popover presents when this equals its `tag` and dismisses otherwise.
+</ParamField>
+
+<ParamField path="tag" type="Selection" required>
+  A `Hashable` value that uniquely identifies this popover. Also automatically set as `attributes.tag`.
+</ParamField>
+
+<ParamField path="attributes" type="(inout Popover.Attributes) -> Void">
+  A closure to configure the popover's attributes before it is presented.
+</ParamField>
+
+<ParamField path="view" type="() -> MainContent" required>
+  A `@ViewBuilder` closure that returns the popover's content view.
+</ParamField>
+
+<ParamField path="background" type="() -> BackgroundContent" required>
+  A `@ViewBuilder` closure that returns the view rendered behind the popover.
+</ParamField>
+
+<Note>
+  In SwiftUI, `sourceFrame` is automatically set to the parent view's frame. You only need to set it manually in `attributes` if you want the popover to originate from a different frame. See [Position](/customization/position) for details.
+</Note>

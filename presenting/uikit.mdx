@@ -1,0 +1,178 @@
+---
+title: "UIKit popover API: Popover struct and UIResponder methods"
+description: "Create a Popover struct, set sourceFrame, and call present(_:) from any UIViewController. Covers replace, dismiss, and dismissAllPopovers."
+---
+
+In UIKit, you create a `Popover` value directly, configure its attributes, then call `present(_:)` on any `UIViewController`. Because UIKit doesn't read view frames automatically, you must set `attributes.sourceFrame` so the popover knows where to anchor itself.
+
+## Initializers
+
+### `Popover(attributes:view:)`
+
+Creates a popover with a SwiftUI content view.
+
+```swift
+import SwiftUI
+import Popovers
+
+class ViewController: UIViewController {
+    @IBOutlet weak var button: UIButton!
+
+    @IBAction func buttonPressed(_ sender: Any) {
+        var popover = Popover { PopoverView() }
+        popover.attributes.sourceFrame = { [weak button] in
+            button.windowFrame()
+        }
+
+        present(popover)
+    }
+}
+
+struct PopoverView: View {
+    var body: some View {
+        Text("Hi, I'm a popover.")
+            .padding()
+            .foregroundColor(.white)
+            .background(.blue)
+            .cornerRadius(16)
+    }
+}
+```
+
+<ParamField path="attributes" type="Popover.Attributes">
+  Customization options for the popover. Defaults to `Popover.Attributes()`. Modify properties such as `sourceFrame`, `position`, `presentation`, and `dismissal` before presenting.
+</ParamField>
+
+<ParamField path="view" type="() -> Content" required>
+  A `@ViewBuilder` closure that returns the popover's content view.
+</ParamField>
+
+### `Popover(attributes:view:background:)`
+
+Creates a popover with a SwiftUI content view and a custom background that fills the screen behind it.
+
+```swift
+var popover = Popover {
+    PopoverView()
+} background: {
+    Color.green.opacity(0.5)
+}
+popover.attributes.sourceFrame = { [weak button] in
+    button.windowFrame()
+}
+present(popover)
+```
+
+<ParamField path="attributes" type="Popover.Attributes">
+  Customization options for the popover.
+</ParamField>
+
+<ParamField path="view" type="() -> MainContent" required>
+  A `@ViewBuilder` closure that returns the popover's content view.
+</ParamField>
+
+<ParamField path="background" type="() -> BackgroundContent" required>
+  A `@ViewBuilder` closure that returns the view rendered behind the popover, filling the entire screen.
+</ParamField>
+
+## UIViewController
+
+### `present(_:)`
+
+Presents a popover using the view controller's window as the presentation context. This method is available on `UIViewController`.
+
+```swift
+present(popover)
+```
+
+<ParamField path="popover" type="Popover" required>
+  The popover to present.
+</ParamField>
+
+## UIResponder extensions
+
+These methods are available on any `UIResponder` in the window's responder chain, including `UIViewController` and `UIView`.
+
+### `popover(tagged:)`
+
+Returns the currently-presented popover with the given tag, or `nil` if none is found.
+
+```swift
+let popover = popover(tagged: "Your Tag")
+```
+
+<ParamField path="tag" type="AnyHashable" required>
+  The tag to look up. This matches the value set via `attributes.tag`.
+</ParamField>
+
+### `replace(_:with:)`
+
+Replaces an existing popover with a new one, smoothly animating the transition if the view structure is the same.
+
+```swift
+if let oldPopover = popover(tagged: "Popover 1") {
+    replace(oldPopover, with: newPopover)
+} else {
+    present(newPopover)
+}
+```
+
+<ParamField path="oldPopover" type="Popover" required>
+  The currently-presented popover to replace.
+</ParamField>
+
+<ParamField path="newPopover" type="Popover" required>
+  The new popover to display in its place.
+</ParamField>
+
+### `dismiss(_:)`
+
+Dismisses a specific popover.
+
+```swift
+dismiss(popover)
+```
+
+<ParamField path="popover" type="Popover" required>
+  The popover to dismiss.
+</ParamField>
+
+### `dismissAllPopovers(with:)`
+
+Dismisses all currently presented popovers, or only those matching a specific tag.
+
+```swift
+// Dismiss all popovers in the current window.
+dismissAllPopovers()
+
+// Dismiss only popovers tagged "MyPopover".
+dismissAllPopovers(with: "MyPopover")
+```
+
+<ParamField path="tag" type="AnyHashable?">
+  When provided, only popovers with this tag are dismissed. When `nil` (the default), all popovers are dismissed.
+</ParamField>
+
+## `UIView.windowFrame()`
+
+Converts a view's frame to global window coordinates. Use this whenever you set `sourceFrame` or `excludedFrames`, since those properties require coordinates in the window's coordinate space.
+
+```swift
+/// Convert a UIView's frame to window coordinates.
+let frame = button.windowFrame()
+
+/// Also works on Optional<UIView> — returns .zero if nil.
+popover.attributes.sourceFrame = { [weak button] in
+    button.windowFrame()
+}
+```
+
+<Warning>
+  In UIKit you must set `attributes.sourceFrame` before presenting. Without it, the popover defaults to `CGRect.zero` and appears in the top-left corner of the screen. Always use `windowFrame()` and a `weak` capture to avoid retain cycles:
+
+  ```swift
+  popover.attributes.sourceFrame = { [weak button] in
+      button.windowFrame()
+  }
+  ```
+</Warning>

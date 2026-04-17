@@ -1,0 +1,159 @@
+---
+title: "Popover positioning: absolute, relative, and anchor points"
+description: "Configure where a popover appears using absolute mode to attach to a source view, or relative mode for picture-in-picture placement with anchor points."
+---
+
+Popovers supports two positioning strategies controlled by `Popover.Attributes.position`. In **absolute** mode the popover attaches to a specific source view using a pair of anchor points. In **relative** mode the popover floats inside a container view, and when multiple anchor points are supplied the user can drag it between them just like picture-in-picture.
+
+## Position modes
+
+<ParamField path="attributes.position" type="Popover.Attributes.Position" default=".absolute(originAnchor: .bottom, popoverAnchor: .top)">
+  The positioning strategy for the popover. Choose `.absolute` to pin the popover to a source view, or `.relative` to place it freely within a container.
+
+  **`.absolute(originAnchor:popoverAnchor:)`** — Attaches the popover to the source view supplied by `sourceFrame`. `originAnchor` picks the point on the source view, and `popoverAnchor` picks the matching corner of the popover itself.
+
+  **`.relative(popoverAnchors:)`** — Places the popover inside the container view supplied by `sourceFrame`. Supply multiple anchors to allow the user to drag the popover between positions, producing a picture-in-picture effect.
+</ParamField>
+
+### Anchor points
+
+`Popover.Attributes.Position.Anchor` identifies a point on a rectangle. Both `.absolute` and `.relative` positioning use anchors to describe where the popover connects to or appears within its target frame.
+
+```
+topLeft          top          topRight
+   X──────────────X──────────────X
+   |                             |
+left  X         center           X  right
+   |                             |
+   X──────────────X──────────────X
+bottomLeft      bottom       bottomRight
+```
+
+<ParamField path="anchor" type="Popover.Attributes.Position.Anchor">
+  One of nine positions on a rectangle.
+
+  | Case | Description |
+  |------|-------------|
+  | `.topLeft` | Top-left corner |
+  | `.top` | Center of the top edge |
+  | `.topRight` | Top-right corner |
+  | `.right` | Center of the right edge |
+  | `.bottomRight` | Bottom-right corner |
+  | `.bottom` | Center of the bottom edge |
+  | `.bottomLeft` | Bottom-left corner |
+  | `.left` | Center of the left edge |
+  | `.center` | Center of the rectangle |
+</ParamField>
+
+## Source frame and insets
+
+<ParamField path="attributes.sourceFrame" type="() -> CGRect" default="{ .zero }">
+  A closure that returns the frame the popover attaches to or is placed within. The value must be in **global window coordinates**. Because frames can change (e.g. on device rotation), this is a closure rather than a plain value so that the library can re-evaluate it whenever bounds update.
+
+  In SwiftUI, `sourceFrame` is automatically set to the parent view's frame. You only need to set it manually when you want to override that default. In UIKit you must always provide a source frame, otherwise the popover will appear in the top-left corner of the screen.
+</ParamField>
+
+<ParamField path="attributes.sourceFrameInset" type="UIEdgeInsets" default="UIEdgeInsets.zero">
+  Edge insets applied to the source frame before positioning is calculated. **Positive** values shrink (inset) the frame; **negative** values expand it. Use this to nudge the popover's attachment point without changing the underlying source view.
+</ParamField>
+
+<ParamField path="attributes.screenEdgePadding" type="UIEdgeInsets" default="UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)">
+  Global insets that prevent any popover from overflowing off the screen edges. Acts like a safe area applied to all presented popovers. The default value is 16 pt on every side.
+</ParamField>
+
+## Code examples
+
+### Absolute positioning
+
+<Tabs>
+  <Tab title="SwiftUI">
+    ```swift
+    .popover(
+        present: $present,
+        attributes: {
+            $0.position = .absolute(
+                originAnchor: .bottom,
+                popoverAnchor: .topLeft
+            )
+        }
+    ) {
+        Text("Hi, I'm a popover.")
+    }
+    ```
+  </Tab>
+  <Tab title="UIKit">
+    ```swift
+    var popover = Popover {
+        Text("Hi, I'm a popover.")
+    }
+
+    popover.attributes.position = .absolute(
+        originAnchor: .bottom,
+        popoverAnchor: .topLeft
+    )
+
+    present(popover)
+    ```
+  </Tab>
+</Tabs>
+
+### Relative (picture-in-picture) positioning
+
+<Tabs>
+  <Tab title="SwiftUI">
+    ```swift
+    .popover(
+        present: $present,
+        attributes: {
+            $0.position = .relative(popoverAnchors: [.right])
+        }
+    ) {
+        Text("Hi, I'm a popover.")
+    }
+    ```
+  </Tab>
+  <Tab title="UIKit">
+    ```swift
+    var popover = Popover {
+        Text("Hi, I'm a popover.")
+    }
+
+    popover.attributes.position = .relative(popoverAnchors: [.right])
+
+    present(popover)
+    ```
+  </Tab>
+</Tabs>
+
+### Setting sourceFrame
+
+<Tabs>
+  <Tab title="SwiftUI">
+    ```swift
+    // SwiftUI sets sourceFrame automatically from the parent view.
+    // Override it only when you need a different frame.
+    .popover(
+        present: $present,
+        attributes: {
+            $0.sourceFrame = {
+                /** some CGRect here */
+            }
+        }
+    ) {
+        Text("Hi, I'm a popover.")
+    }
+    ```
+  </Tab>
+  <Tab title="UIKit">
+    ```swift
+    // Use `weak` to prevent a retain cycle.
+    attributes.sourceFrame = { [weak button] in
+        button.windowFrame()
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  In SwiftUI the `sourceFrame` is automatically set to the parent view's frame. You only need to assign it explicitly when you want the popover to attach to a different view. In UIKit, always provide a `sourceFrame` — omitting it causes the popover to appear at the top-left of the screen.
+</Note>

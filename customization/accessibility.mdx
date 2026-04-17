@@ -1,0 +1,86 @@
+---
+title: "VoiceOver and accessibility configuration for popovers"
+description: "Configure VoiceOver focus and the dismiss button for popovers. Covers shiftFocus, dismissButtonLabel, and the two-finger escape gesture."
+---
+
+Popovers is fully accessible. When VoiceOver is running, the library automatically shifts focus to the popover when it appears, and adds a visible dismiss button because the standard tap-outside gesture is not available to VoiceOver users. Both behaviors are configurable through the `Popover.Attributes.Accessibility` struct.
+
+## Accessibility properties
+
+<ParamField path="attributes.accessibility.shiftFocus" type="Bool" default="true">
+  When `true`, VoiceOver automatically moves focus to the popover as soon as it is presented. Disable this if you want focus to remain on the element that triggered the popover.
+</ParamField>
+
+<ParamField path="attributes.accessibility.dismissButtonLabel" type="AnyView?">
+  A view displayed next to the popover only when VoiceOver is active. Tapping it dismisses the popover, providing an accessible alternative to tap-outside dismissal which VoiceOver does not support.
+
+  Set to `nil` to suppress the dismiss button entirely (not recommended unless you provide another accessible dismissal path).
+</ParamField>
+
+<Note>
+  The default value of `dismissButtonLabel` is `Popover.Attributes.Accessibility.defaultDismissButtonLabel` — an X mark icon (`xmark`) centered in a 36 × 36 pt circle with a semi-transparent black background. It includes the VoiceOver label "Close" and hint "Dismiss this popover."
+</Note>
+
+## Code examples
+
+### Default accessibility configuration
+
+```swift
+// Default values — no changes needed for standard VoiceOver support.
+$0.accessibility.shiftFocus = true
+$0.accessibility.dismissButtonLabel = Popover.Attributes.Accessibility.defaultDismissButtonLabel
+```
+
+### Custom dismiss button
+
+<Tabs>
+  <Tab title="SwiftUI">
+    ```swift
+    .popover(
+        present: $present,
+        attributes: {
+            $0.accessibility.shiftFocus = true
+            $0.accessibility.dismissButtonLabel = AnyView(
+                Text("Close")
+                    .padding(8)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+            )
+        }
+    ) {
+        Text("Hi, I'm a popover.")
+    }
+    ```
+  </Tab>
+  <Tab title="UIKit">
+    ```swift
+    var popover = Popover {
+        Text("Hi, I'm a popover.")
+    }
+
+    popover.attributes.accessibility.shiftFocus = true
+    popover.attributes.accessibility.dismissButtonLabel = AnyView(
+        Text("Close")
+            .padding(8)
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(8)
+    )
+
+    present(popover)
+    ```
+  </Tab>
+</Tabs>
+
+### Disabling the dismiss button
+
+```swift
+// Remove the VoiceOver dismiss button.
+// Only do this if you provide an alternative way to dismiss the popover.
+$0.accessibility.dismissButtonLabel = nil
+```
+
+## Accessibility escape gesture
+
+VoiceOver users can dismiss all currently presented popovers at once by performing the **accessibility escape gesture**: a two-fingered Z-shape swipe. This works without any additional configuration.

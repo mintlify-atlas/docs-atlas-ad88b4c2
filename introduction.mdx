@@ -1,0 +1,55 @@
+---
+title: "Popovers: present custom overlays in iOS with Swift"
+description: "Present any SwiftUI or UIKit view as a popover on iOS. Flexible positioning, smooth animations, template components, and zero dependencies."
+---
+
+Popovers is a Swift library that lets you present any view above your app's main content on iOS. Whether you need a tooltip anchored to a button, a picture-in-picture style floating panel, a custom menu, or a full-screen overlay, Popovers gives you a single consistent API that works in both SwiftUI and UIKit — with no external dependencies.
+
+## What you can build
+
+- Custom alerts, confirmation dialogs, and action sheets
+- Tooltips and onboarding coach marks anchored to UI elements
+- Picture-in-picture style floating panels the user can drag between positions
+- Context menus that match (or exceed) the look of the system `Menu`
+- In-app notifications and banners
+- Multi-step tutorial overlays
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Install Popovers" icon="download" href="/installation">
+    Add the library to your Xcode project via Swift Package Manager or CocoaPods
+  </Card>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Present your first popover in SwiftUI or UIKit in under a minute
+  </Card>
+  <Card title="SwiftUI guide" icon="swift" href="/presenting/swiftui">
+    Use the `.popover(present:)` modifier and the `attributes` closure to configure everything
+  </Card>
+  <Card title="UIKit guide" icon="mobile" href="/presenting/uikit">
+    Create a `Popover` struct, set its `attributes`, and call `present()`
+  </Card>
+</CardGroup>
+
+## Capabilities at a glance
+
+- **Present any view** — pass any SwiftUI `View` as the popover's content or background
+- **Absolute and relative positioning** — attach to a source view or float freely like a PIP window
+- **Multiple simultaneous popovers** — display several at once with smooth animated transitions between them
+- **Fully customizable attributes** — control position, presentation animation, dismissal mode, rubber banding, background blocking, and accessibility behavior through the `Popover.Attributes` struct
+- **Interactive drag behavior** — popovers can be dragged off screen or between anchor positions
+- **VoiceOver support** — built-in accessibility with configurable focus shifting and dismiss button
+- **Ready-made templates** — ship faster with `Templates.Menu`, `BackgroundWithArrow`, `Container`, `CurveConnector`, and more
+
+## Requirements
+
+| Requirement | Value |
+|-------------|-------|
+| iOS | 14.0+ |
+| Swift | 5.5+ |
+| Xcode | 13.0+ |
+| Dependencies | None |
+
+<Note>
+  Popovers is built on a SwiftUI core and has zero external dependencies, keeping your app's dependency graph clean.
+</Note>

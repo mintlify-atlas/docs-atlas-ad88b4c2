@@ -1,0 +1,123 @@
+---
+title: "Multiple popovers: simultaneous display and transitions"
+description: "Present and animate between multiple popovers using .popover(selection:tag:) in SwiftUI or replace(_:with:) in UIKit. Covers excluded frames and tags."
+---
+
+Popovers supports presenting multiple popovers simultaneously and animating smoothly from one to another. As long as the view structure remains the same, the library will interpolate between positions and sizes. Both SwiftUI and UIKit have dedicated APIs for coordinating these transitions.
+
+## SwiftUI: selection-based presentation
+
+The `.popover(selection:tag:)` modifier lets multiple popovers share a single `@State` variable. Each popover declares a unique `tag`, and the one whose tag matches the current `selection` is presented. Changing `selection` dismisses the current popover and presents the matching one with a smooth animation.
+
+```swift
+struct ContentView: View {
+    @State var selection: String?
+
+    var body: some View {
+        HStack {
+            Button("Present First Popover") { selection = "1" }
+                .popover(selection: $selection, tag: "1") {
+                    /// Will be presented when selection == "1".
+                    Text("Hi, I'm a popover.")
+                        .background(.blue)
+                }
+
+            Button("Present Second Popover") { selection = "2" }
+                .popover(selection: $selection, tag: "2") {
+                    /// Will be presented when selection == "2".
+                    Text("Hi, I'm a popover.")
+                        .background(.green)
+                }
+        }
+    }
+}
+```
+
+Setting `selection = nil` dismisses whichever popover is currently visible.
+
+## UIKit: replace one popover with another
+
+In UIKit, use `popover(tagged:)` to look up an existing popover by its tag, then call `replace(_:with:)` to swap it out. If no popover with that tag is currently presented, fall back to `present(_:)`.
+
+```swift
+@IBAction func button1Pressed(_ sender: Any) {
+    var newPopover = Popover { Text("Hi, I'm a popover.").background(.blue) }
+    newPopover.attributes.sourceFrame = { [weak button1] in button1.windowFrame() }
+    newPopover.attributes.dismissal.excludedFrames = { [weak button2] in [button2.windowFrame()] }
+    newPopover.attributes.tag = "Popover 1"
+
+    if let oldPopover = popover(tagged: "Popover 2") {
+        replace(oldPopover, with: newPopover)
+    } else {
+        present(newPopover) /// Present if the old popover doesn't exist.
+    }
+}
+
+@IBAction func button2Pressed(_ sender: Any) {
+    var newPopover = Popover { Text("Hi, I'm a popover.").background(.green) }
+    newPopover.attributes.sourceFrame = { [weak button2] in button2.windowFrame() }
+    newPopover.attributes.dismissal.excludedFrames = { [weak button1] in [button1.windowFrame()] }
+    newPopover.attributes.tag = "Popover 2"
+
+    if let oldPopover = popover(tagged: "Popover 1") {
+        replace(oldPopover, with: newPopover)
+    } else {
+        present(newPopover)
+    }
+}
+```
+
+## Excluded frames
+
+When `dismissal.mode` is `.tapOutside` (the default), tapping outside a popover dismisses it. In a multi-popover setup this causes a problem: tapping a button to switch popovers would dismiss the current one before the new one could animate in.
+
+Set `dismissal.excludedFrames` to the source frames of the other buttons. When the user taps inside an excluded frame, the current popover stays presented so the transition can complete smoothly.
+
+<Tabs>
+  <Tab title="SwiftUI">
+    The `.popover(selection:tag:)` modifier handles excluded frames automatically. All registered `selection`-based popovers add each other's source frames as excluded frames, so no manual configuration is needed.
+  </Tab>
+  <Tab title="UIKit">
+    Set `excludedFrames` manually on each popover before presenting it:
+
+    ```swift
+    let popover1 = Popover { Text("Hello") }
+    popover1.attributes.sourceFrame = { [weak button1] in button1.windowFrame() }
+    popover1.attributes.dismissal.excludedFrames = { [weak button2] in [ button2.windowFrame() ] }
+
+    let popover2 = Popover { Text("Hello") }
+    popover2.attributes.sourceFrame = { [weak button2] in button2.windowFrame() }
+    popover2.attributes.dismissal.excludedFrames = { [weak button1] in [ button1.windowFrame() ] }
+    ```
+
+    Each popover lists the other button's frame as an excluded frame. This prevents the current popover from being dismissed when the user taps the other button to switch popovers.
+  </Tab>
+</Tabs>
+
+## Tags
+
+Tags let you retrieve a presented popover from anywhere in your code. Set `attributes.tag` to any `Hashable` value, then call `popover(tagged:)` to get it back.
+
+<Tabs>
+  <Tab title="UIKit">
+    Call `popover(tagged:)` on any `UIView` or `UIViewController`:
+
+    ```swift
+    /// Get a popover by tag from a UIView or UIViewController.
+    let popover = popover(tagged: "Your Tag")
+    ```
+  </Tab>
+  <Tab title="SwiftUI">
+    Use `WindowReader` to access the window, then call `popover(tagged:)` on it:
+
+    ```swift
+    WindowReader { window in
+        let popover = window.popover(tagged: "Your Tag")
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+  When you use `.popover(selection:tag:attributes:view:)`, the `tag` parameter is automatically set as `attributes.tag`. You can retrieve that popover later with `window.popover(tagged:)` inside a `WindowReader` without any extra configuration.
+</Tip>

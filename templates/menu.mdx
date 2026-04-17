@@ -1,0 +1,325 @@
+---
+title: "Templates.Menu: build iOS-style contextual menus in Swift"
+description: "Drop-in replacement for UIMenu and SwiftUI Menu that replicates system contextual menus. Works in SwiftUI and UIKit with full MenuConfiguration support."
+---
+
+`Templates.Menu` is a fully custom implementation of the iOS system contextual menu. It replicates the press-and-hold activation gesture, the blur background, the scale and clip animation, and the per-item highlight feedback — all without requiring iOS 14's native `Menu` view. It works in both SwiftUI and UIKit, and you can drive presentation manually via a `Binding<Bool>` when needed.
+
+## SwiftUI
+
+### Basic usage
+
+```swift
+struct ContentView: View {
+    var body: some View {
+        Templates.Menu {
+            Templates.MenuButton(title: "Button 1", systemImage: "1.circle.fill") { print("Button 1 pressed") }
+            Templates.MenuButton(title: "Button 2", systemImage: "2.circle.fill") { print("Button 2 pressed") }
+        } label: { fade in
+            Text("Present Menu!")
+                .opacity(fade ? 0.5 : 1)
+        }
+    }
+}
+```
+
+The `label` closure receives a `Bool` that is `true` while the menu is open so you can dim the trigger view to match the system behaviour.
+
+### Customized
+
+Pass a `configuration` closure to override any `MenuConfiguration` property before the menu is built.
+
+```swift
+Templates.Menu(
+    configuration: {
+        $0.width = 360
+        $0.backgroundColor = .blue.opacity(0.2)
+    }
+) {
+    Text("Hi, I'm a menu!")
+        .padding()
+
+    Templates.MenuDivider()
+
+    Templates.MenuItem {
+        print("Item tapped")
+    } label: { fade in
+        Color.clear.overlay(
+            AsyncImage(url: URL(string: "https://getfind.app/image.png")) {
+                $0.resizable().aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Color.clear
+            }
+        )
+        .frame(height: 180)
+        .clipped()
+        .opacity(fade ? 0.5 : 1)
+    }
+
+} label: { fade in
+    Text("Present Menu!")
+        .opacity(fade ? 0.5 : 1)
+}
+```
+
+### Manual presentation
+
+Bind a `Bool` state variable to `present:` to open or dismiss the menu from outside the label gesture.
+
+```swift
+struct ContentView: View {
+    @State var present = false
+    var body: some View {
+        VStack {
+            Toggle("Activate", isOn: $present)
+                .padding()
+                .background(.regularMaterial)
+                .cornerRadius(12)
+                .padding()
+
+            Templates.Menu(present: $present) {
+                Templates.MenuButton(title: "Button 1", systemImage: "1.circle.fill") { print("Button 1 pressed") }
+                Templates.MenuButton(title: "Button 2", systemImage: "2.circle.fill") { print("Button 2 pressed") }
+            } label: { fade in
+                Text("Present Menu!")
+                    .opacity(fade ? 0.5 : 1)
+            }
+        }
+    }
+}
+```
+
+### Parameters
+
+<ParamField path="present" type="Binding<Bool>" default=".constant(false)">
+  External binding that controls menu presentation. When this value flips to `true` the menu opens; when it returns to `false` the menu dismisses. Useful for programmatic control independent of the label gesture.
+</ParamField>
+
+<ParamField path="configuration" type="(inout MenuConfiguration) -> Void" default="{ _ in }">
+  Closure called before the menu is displayed. Mutate the `inout` `MenuConfiguration` value to customise appearance and behaviour. All properties of `MenuConfiguration` are available here.
+</ParamField>
+
+<ParamField path="content" type="() -> Content">
+  `@ViewBuilder` closure that produces the menu items. Use `Templates.MenuButton`, `Templates.MenuItem`, `Templates.MenuDivider`, or any SwiftUI view.
+</ParamField>
+
+<ParamField path="label" type="(Bool) -> GeneratorLabel">
+  `@ViewBuilder` closure that produces the trigger view. The `Bool` argument is `true` while the menu is visible so you can apply a fade or other visual cue.
+</ParamField>
+
+---
+
+## UIKit
+
+### Basic usage
+
+```swift
+class ViewController: UIViewController {
+    @IBOutlet var label: UILabel!
+
+    lazy var menu = Templates.UIKitMenu(sourceView: label) {
+        Templates.MenuButton(title: "Button 1", systemImage: "1.circle.fill") { print("Button 1 pressed") }
+        Templates.MenuButton(title: "Button 2", systemImage: "2.circle.fill") { print("Button 2 pressed") }
+    } fadeLabel: { [weak self] fade in
+        self?.label.alpha = fade ? 0.5 : 1
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        _ = menu // Create the menu.
+    }
+}
+```
+
+`Templates.UIKitMenu` attaches a long-press gesture recogniser to `sourceView` automatically. Instantiate it and keep a reference — the gesture recogniser is installed as a side effect of initialisation.
+
+### Customized
+
+```swift
+lazy var menu = Templates.UIKitMenu(
+    sourceView: button,
+    configuration: {
+        $0.width = 300
+        $0.cornerRadius = 20
+        $0.hapticFeedbackEnabled = false
+    }
+) {
+    Templates.MenuButton(title: "Share", systemImage: "square.and.arrow.up") { print("Share") }
+    Templates.MenuDivider()
+    Templates.MenuButton(title: "Delete", systemImage: "trash") { print("Delete") }
+} fadeLabel: { [weak self] fade in
+    self?.button.alpha = fade ? 0.5 : 1
+}
+```
+
+### Parameters
+
+<ParamField path="sourceView" type="UIView">
+  The `UIView` that the menu attaches to. The long-press gesture recogniser is installed on this view and the popover is anchored to its frame.
+</ParamField>
+
+<ParamField path="configuration" type="(inout MenuConfiguration) -> Void" default="{ _ in }">
+  Closure for customising `MenuConfiguration` before the menu is presented.
+</ParamField>
+
+<ParamField path="content" type="() -> Content">
+  `@ViewBuilder` closure that produces the menu items.
+</ParamField>
+
+<ParamField path="fadeLabel" type="((Bool) -> Void)?">
+  Called with `true` when the menu opens and `false` when it dismisses. Use it to animate the source view's opacity.
+</ParamField>
+
+### Programmatic control
+
+`Templates.UIKitMenu` exposes two methods and a property for controlling presentation outside the gesture:
+
+```swift
+menu.present()   // Open the menu.
+menu.dismiss()   // Close the menu.
+menu.isPresented // Bool — whether the menu is currently visible.
+```
+
+---
+
+## MenuConfiguration
+
+`Templates.MenuConfiguration` is a value type you pass via the `configuration:` closure on both SwiftUI and UIKit menus. Every property has a sensible default that matches the system menu.
+
+<ParamField path="hapticFeedbackEnabled" type="Bool" default="true">
+  Plays a `UISelectionFeedbackGenerator` tick whenever the highlighted item changes. Set to `false` to silence feedback.
+</ParamField>
+
+<ParamField path="holdDelay" type="CGFloat" default="0.2">
+  The duration in seconds the user must hold before the menu opens. Mirrors the system's press-and-hold threshold.
+</ParamField>
+
+<ParamField path="presentationAnimation" type="Animation" default=".spring(response: 0.3, dampingFraction: 0.7, blendDuration: 1)">
+  The SwiftUI animation applied when the menu appears.
+</ParamField>
+
+<ParamField path="dismissalAnimation" type="Animation" default=".spring(response: 0.4, dampingFraction: 0.9, blendDuration: 1)">
+  The SwiftUI animation applied when the menu dismisses.
+</ParamField>
+
+<ParamField path="width" type="CGFloat?" default="240">
+  Fixed width of the menu in points. Pass `nil` to let the menu hug its content width.
+</ParamField>
+
+<ParamField path="cornerRadius" type="CGFloat" default="14">
+  Corner radius applied to the menu background and the clipping mask.
+</ParamField>
+
+<ParamField path="backgroundColor" type="Color" default=".clear">
+  A color that is overlaid over the entire screen directly beneath the menu. Use a semi-transparent color to create a scrim effect.
+</ParamField>
+
+<ParamField path="menuBlur" type="UIBlurEffect.Style" default=".prominent">
+  The `UIBlurEffect.Style` used for the menu's frosted-glass background.
+</ParamField>
+
+<ParamField path="originAnchor" type="Popover.Attributes.Position.Anchor" default=".bottom">
+  The anchor point on the label view from which the popover emerges.
+</ParamField>
+
+<ParamField path="popoverAnchor" type="Popover.Attributes.Position.Anchor" default=".top">
+  The anchor point on the menu popover that aligns with `originAnchor`.
+</ParamField>
+
+<ParamField path="dismissAfterSelecting" type="Bool" default="true">
+  When `true`, the menu is automatically dismissed after the user selects an item. Set to `false` to keep the menu visible after selection.
+</ParamField>
+
+<ParamField path="shadow" type="Shadow" default=".system">
+  The drop shadow applied behind the menu. See `Templates.Shadow` for the available presets and custom values.
+</ParamField>
+
+---
+
+## Building blocks
+
+### Templates.MenuItem
+
+A low-level pressable container that tracks hover state and triggers an action on release. Use it when you need fully custom menu item content.
+
+```swift
+Templates.MenuItem {
+    print("Item tapped")
+} label: { fade in
+    HStack {
+        Image(systemName: "star.fill")
+        Text("Favourite")
+    }
+    .padding()
+    .opacity(fade ? 0.5 : 1)
+}
+```
+
+<ParamField path="action" type="() -> Void">
+  Called when the user lifts their finger over this item.
+</ParamField>
+
+<ParamField path="label" type="(Bool) -> Content">
+  `@ViewBuilder` closure producing the item's content. The `Bool` is `true` when the item is being hovered.
+</ParamField>
+
+### Templates.MenuButton
+
+A pre-styled button that matches the system menu row — title on the left, SF Symbol icon on the right. Backed by `Templates.MenuItem`.
+
+```swift
+Templates.MenuButton(title: "Share", systemImage: "square.and.arrow.up") {
+    print("Share tapped")
+}
+
+// Disable a button without dismissing the menu on tap.
+Templates.MenuButton(title: "Unavailable", systemImage: "xmark") { }
+    .disabled(true)
+```
+
+<ParamField path="title" type="String?">
+  The button's text label, displayed left-aligned. Pass `nil` to show only the icon.
+</ParamField>
+
+<ParamField path="systemImage" type="String?">
+  SF Symbol name displayed on the trailing edge. Pass `nil` to show only the title.
+</ParamField>
+
+<ParamField path="action" type="() -> Void">
+  Called when the button is selected.
+</ParamField>
+
+### Templates.MenuDivider
+
+A full-width separator that visually groups sections of menu items. Renders as a slightly thickened translucent line matching the system style.
+
+```swift
+Templates.Menu {
+    Templates.MenuButton(title: "Copy", systemImage: "doc.on.doc") { }
+    Templates.MenuDivider()
+    Templates.MenuButton(title: "Delete", systemImage: "trash") { }
+} label: { fade in
+    Image(systemName: "ellipsis.circle")
+        .opacity(fade ? 0.5 : 1)
+}
+```
+
+### Templates.MenuGestureHotspot
+
+Wraps any view and attaches the menu's drag gesture recogniser to it. Useful when you set `configuration.useEntireMenuAsGestureHotspot = false` and want to limit gesture handling to a specific sub-view.
+
+```swift
+Templates.Menu(
+    configuration: { $0.useEntireMenuAsGestureHotspot = false }
+) {
+    Templates.MenuGestureHotspot {
+        Templates.MenuButton(title: "Action", systemImage: "bolt") { }
+    }
+    // This view will not respond to the selection gesture:
+    Text("Non-interactive content")
+        .padding()
+} label: { fade in
+    Text("Open")
+        .opacity(fade ? 0.5 : 1)
+}
+```

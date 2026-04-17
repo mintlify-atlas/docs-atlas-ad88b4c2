@@ -1,0 +1,129 @@
+---
+title: "Presentation and dismissal animation configuration"
+description: "Configure the animations and transitions for popover appearance and removal. Control auto-dismissal via tap-outside, drag-down, drag-up, or disable it."
+---
+
+Popovers separates animation concerns into two structs: `Popover.Attributes.Presentation` covers how the popover appears, and `Popover.Attributes.Dismissal` covers how it leaves — including the gesture modes that trigger auto-dismissal. Both structs are set on the popover's `attributes` property before presentation.
+
+## Presentation
+
+`Popover.Attributes.Presentation` controls the animation and transition applied when the popover is shown.
+
+<ParamField path="attributes.presentation.animation" type="Animation?" default=".easeOut">
+  The SwiftUI animation timing curve used when the popover is presented. Set to `nil` to present without any animation.
+</ParamField>
+
+<ParamField path="attributes.presentation.transition" type="AnyTransition?" default=".opacity">
+  The SwiftUI transition applied to the popover view when it is inserted. Set to `nil` to present without a transition.
+</ParamField>
+
+## Dismissal
+
+`Popover.Attributes.Dismissal` controls the animation, transition, and the gesture-based auto-dismissal behavior of the popover.
+
+<ParamField path="attributes.dismissal.animation" type="Animation?" default=".easeOut">
+  The SwiftUI animation timing curve used when the popover is dismissed.
+</ParamField>
+
+<ParamField path="attributes.dismissal.transition" type="AnyTransition?" default=".opacity">
+  The SwiftUI transition applied to the popover view when it is removed.
+</ParamField>
+
+<ParamField path="attributes.dismissal.mode" type="Dismissal.Mode" default=".tapOutside">
+  An `OptionSet` that controls which gestures automatically dismiss the popover. Multiple modes can be combined. See [Dismissal.Mode](#dismissal-mode) for all available cases.
+</ParamField>
+
+<ParamField path="attributes.dismissal.tapOutsideIncludesOtherPopovers" type="Bool" default="false">
+  When `mode` includes `.tapOutside`, setting this to `true` means the popover is also dismissed when the user taps on a **different** presented popover. By default, tapping another popover does not dismiss the current one.
+</ParamField>
+
+<ParamField path="attributes.dismissal.excludedFrames" type="() -> [CGRect]" default="{ [] }">
+  A closure returning frames where taps should **not** trigger dismissal. Only applies when `mode` includes `.tapOutside`. Use this when you want the popover to remain visible while the user interacts with specific views — for example, the source button of a sibling popover.
+</ParamField>
+
+<ParamField path="attributes.dismissal.dragMovesPopoverOffScreen" type="Bool" default="true">
+  When `mode` includes `.dragDown` or `.dragUp`, this controls whether the popover continues to animate off the screen after a dismissal drag. Only applies when a drag-based mode is active.
+</ParamField>
+
+<ParamField path="attributes.dismissal.dragDismissalProximity" type="CGFloat" default="0.25">
+  The proportion of the screen height that the user must drag the popover past before it auto-dismisses. The default `0.25` means a drag that reaches the top 25% of the screen (for `.dragUp`) or the bottom 25% (for `.dragDown`) triggers dismissal. Only applies when `mode` includes `.dragDown` or `.dragUp`.
+</ParamField>
+
+### Dismissal.Mode
+
+`Dismissal.Mode` is an `OptionSet`, so multiple cases can be combined with array syntax.
+
+| Case | Description |
+|------|-------------|
+| `.tapOutside` | Dismiss when the user taps outside the popover |
+| `.dragDown` | Dismiss when the user drags the popover downward |
+| `.dragUp` | Dismiss when the user drags the popover upward |
+| `.none` | Never auto-dismiss |
+
+## Code examples
+
+### Configuring presentation and dismissal
+
+<Tabs>
+  <Tab title="SwiftUI">
+    ```swift
+    .popover(
+        present: $present,
+        attributes: {
+            $0.presentation.animation = .easeInOut
+            $0.presentation.transition = .opacity
+
+            $0.dismissal.animation = .easeInOut
+            $0.dismissal.transition = .opacity
+            $0.dismissal.mode = .tapOutside
+            $0.dismissal.tapOutsideIncludesOtherPopovers = false
+            $0.dismissal.excludedFrames = { [] }
+            $0.dismissal.dragMovesPopoverOffScreen = true
+            $0.dismissal.dragDismissalProximity = CGFloat(0.25)
+        }
+    ) {
+        Text("Hi, I'm a popover.")
+    }
+    ```
+  </Tab>
+  <Tab title="UIKit">
+    ```swift
+    var popover = Popover {
+        Text("Hi, I'm a popover.")
+    }
+
+    popover.attributes.presentation.animation = .easeInOut
+    popover.attributes.presentation.transition = .opacity
+
+    popover.attributes.dismissal.animation = .easeInOut
+    popover.attributes.dismissal.transition = .opacity
+    popover.attributes.dismissal.mode = .tapOutside
+    popover.attributes.dismissal.tapOutsideIncludesOtherPopovers = false
+    popover.attributes.dismissal.excludedFrames = { [] }
+    popover.attributes.dismissal.dragMovesPopoverOffScreen = true
+    popover.attributes.dismissal.dragDismissalProximity = CGFloat(0.25)
+
+    present(popover)
+    ```
+  </Tab>
+</Tabs>
+
+### Combining multiple dismiss modes
+
+```swift
+// Dismiss on drag down OR tap outside.
+$0.dismissal.mode = [.dragDown, .tapOutside]
+```
+
+### Excluding frames from tap-outside dismissal
+
+```swift
+// Prevent the popover from dismissing when the user taps the source button of another popover.
+let popover1 = Popover { Text("Hello") }
+popover1.attributes.sourceFrame = { [weak button1] in button1.windowFrame() }
+popover1.attributes.dismissal.excludedFrames = { [weak button2] in [ button2.windowFrame() ] }
+
+let popover2 = Popover { Text("Hello") }
+popover2.attributes.sourceFrame = { [weak button2] in button2.windowFrame() }
+popover2.attributes.dismissal.excludedFrames = { [weak button1] in [ button1.windowFrame() ] }
+```

@@ -1,0 +1,91 @@
+---
+title: "Popover backgrounds: overlays, blurs, and connectors"
+description: "Place any SwiftUI view in the full-window background layer beneath a popover. Use color overlays, blur effects, or PopoverReader connector lines."
+---
+
+Every popover has an optional background layer that sits above the rest of your app's content but beneath the popover itself. This layer covers the entire window, so it's useful for dim overlays, blur effects, or drawing shapes that connect the popover to anchor views. You provide the background view the same way you provide the popover's main view: as a trailing closure or parameter.
+
+## The `background:` parameter
+
+Both the SwiftUI modifier and the UIKit initializer accept an optional `background:` closure. The view returned from this closure is rendered full-window, behind the popover.
+
+<Tabs>
+  <Tab title="SwiftUI">
+    Use the four-argument `.popover(present:attributes:view:background:)` modifier.
+
+    <ParamField path="background" type="() -> Content">
+      A view builder that returns the background view. Rendered full-window, below the popover and above your app's regular content.
+    </ParamField>
+
+    ```swift
+    .popover(present: $present) {
+        PopoverView()
+    } background: { // here!
+        Color.green.opacity(0.5)
+    }
+    ```
+  </Tab>
+  <Tab title="UIKit">
+    Use the `Popover(attributes:view:background:)` initializer.
+
+    <ParamField path="background" type="() -> Content">
+      A view builder that returns the background view. Rendered full-window, below the popover and above your app's regular content.
+    </ParamField>
+
+    ```swift
+    var popover = Popover {
+        PopoverView()
+    } background: { // here!
+        Color.green.opacity(0.5)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Example: simple color overlay
+
+The simplest use is a translucent color that dims the screen behind the popover.
+
+<Tabs>
+  <Tab title="SwiftUI">
+    ```swift
+    .popover(present: $present) {
+        PopoverView()
+    } background: {
+        Color.green.opacity(0.5)
+    }
+    ```
+  </Tab>
+  <Tab title="UIKit">
+    ```swift
+    var popover = Popover {
+        PopoverView()
+    } background: {
+        Color.green.opacity(0.5)
+    }
+    present(popover)
+    ```
+  </Tab>
+</Tabs>
+
+## Example: connecting line with `PopoverReader`
+
+Combine the `background:` closure with `PopoverReader` to draw a line that connects the popover to a fixed point on the screen. The line updates live as the popover moves.
+
+```swift
+.popover(present: $present) {
+    PopoverView()
+} background: {
+    PopoverReader { context in
+        Path {
+            $0.move(to: context.frame.point(at: .bottom))
+            $0.addLine(to: context.windowBounds.point(at: .bottom))
+        }
+        .stroke(Color.blue, lineWidth: 4)
+    }
+}
+```
+
+<Tip>
+  Use `background:` with `PopoverReader` and the `Templates.CurveConnector` shape to create animated bezier curves that connect the popover to a source view. `CurveConnector` is an animatable shape whose endpoints you set directly, making it ideal for this pattern.
+</Tip>
